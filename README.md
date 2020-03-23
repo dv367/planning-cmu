@@ -1,3 +1,5 @@
 # planning-cmu
 This repo consists of implementation of different planning techniques on Turtlebot3 burger.  
-Algorithms are in files named as "main_".
+Algorithms are in files named as "main_".  
+
+> Book: Principle of Robot Motion
