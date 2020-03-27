@@ -7,12 +7,10 @@ from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Empty
 
-from myClasses import PID
-from basics import dist, distNP, angle, scale360, scale180
-from math import pi, atan2, sqrt, cos, fabs, atan, sin, radians 
+from myClasses import *
+from basics import *
+from math import * 
 import numpy as np
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
 
 #max Linear vel = 0.22	Angular = 2.84
 
@@ -24,7 +22,7 @@ laserData = [100]
 #_________________________________________Classes__________________________________________#
 
 
-ppidOmega = PID(2.0,0,0,pi/2,-2.84,2.84) 
+ppidOmega = PID(2.0,0,0,pi/2,-2.84,2.84) #orientation control
 ppidFollowB = PID(0.01,0.1,0,0,-2.84,2.84)
 #_______________________________________________Functions_______________________________________#
 
@@ -60,63 +58,59 @@ def getYaw(Quaternion):
 #___________________________________________ex__Main___________________
 
 
-def contourAttractive(x,y,xg,yg):
+def contourAttractive(x,y,xg,yg):	
 	
 	zeta = 0.22/dist(0,0,xg,yg)
 
-	xx = np.linspace(x, xg, 30)
-	yy = np.linspace(y, yg, 30)
+	xx = np.linspace(x, 2*xg, 100)
+	yy = np.linspace(y, 2*yg, 100)
 
 	X, Y = np.meshgrid(xx, yy)
-	Z = zeta*distNP(X, Y, xg,yg)
-
-	#fig= plt.figure()
-	#ax = plt.axes(projection='3d')
-	#ax.plot_surface(X, Y, Z, rstride=1, cstride=1,cmap='viridis', edgecolor='none')	
-	#fig, ax = plt.subplots(figsize=(6,6))
-	#ax.contourf(X,Y,Z)	
-	#ax.set_xlabel('x')
-	#ax.set_ylabel('y')
-	#ax.set_zlabel('z');
-	#ax.set_title('surface');
-	#plt.show()
+	Z = zeta*distNP(X, Y, xg,yg) #only Magnitude
+	theta = angleNP(X, Y, xg, yg) #angle
+	
+	"""for i in range(0,len(Z)):
+		for j in range(0,len(Z)):
+			temp = Z[i][j]
+				
+			Z[i][j] = Z[i][j]*cos(theta[i][j])
+			theta[i][j] = temp*sin(theta[i][j]) 
+	
+	plt.quiver(X,Y,Z,theta)
+	plt.show()"""
+	
+	return X,Y,Z
+	
 
 def contourRepulsive(x,y,xg,yg,xo,yo):
 	
-	tol = 100
-	r = 10 #cm
-	eta = 22.0/(((1/tol) - (1/350.0))*(350.0)**2)
+	tol = 1.0
+	r = 0.1
+	mR = 3.5
+	eta = 0.22/(((1/tol) - (1/mR))*(mR)**2)
 	
 
-	xx = np.linspace(x, xg, 30)
-	yy = np.linspace(y, yg, 30)
+	xx = np.linspace(x, xg*2, 100)
+	yy = np.linspace(y, yg*2, 100)
 	
 			
 
 	X, Y = np.meshgrid(xx, yy)
-	Z = distNP(X, Y, xo,yo)
+	Z = distNP(X/100, Y/100, xo/100,yo/100)
+	
 	
 	for i in range(0,len(Z)):
 		for j in range(0,len(Z)):
 			if Z[i][j] < tol and Z[i][j] > 0:
-				Z[i][j] = eta*((1/tol) - (1/Z[i][j]))*(1/Z[i][j]**2)
+				Z[i][j] = (eta*((1/tol) - (1/Z[i][j]))*(1/Z[i][j]**2))
+				if fabs(Z[i][j]) > 0.22:
+					Z[i][j] = -0.22 			
 			else:
 				Z[i][j] = 0
-	#fig= plt.figure()	
-	#ax = plt.axes(projection='3d')
-	#ax.contour3D(X, Y, Z, 50, cmap='binary')	
-	#ax.plot_surface(X, Y, Z, rstride=1, cstride=1,cmap='viridis', edgecolor='none')	
-	
-	#fig, ax = plt.subplots(figsize=(6,6))	
-	#ax.contourf(X,Y,Z)	
-	#ax.set_xlabel('x')
-	#ax.set_ylabel('y')
-	#ax.set_zlabel('z');
-	#ax.set_title('surface');
-	#plt.show()
+			
 
-
-	
+		
+	return X,Y,Z	
 
 def attractivePotential(x,y,xg,yg):
 	
@@ -128,7 +122,7 @@ def attractivePotential(x,y,xg,yg):
 
 	return magnitudeA, theta	
 
-def repulsivePotential(x,y,xg,yg):
+def repulsivePotential(x,y,xg,yg):	#only ONE OBSTACLE IS CONSIDERED WHICH IS THE NEAREST
 	global laserData
 
 	tol = 1.0
@@ -151,11 +145,9 @@ def repulsivePotential(x,y,xg,yg):
 		magnitudeR = 0.22
 	return magnitudeR, phi	
 	
-def quadraticPotential(x,y,xg,yg):
+def quadraticPotential(x,y,xg,yg):	
 
-	
-
-	mAtt, theta = attractivePotential(x,y,xg,yg)
+	mAtt, theta = attractivePotential(x,y,xg,yg)	#ONLY TWO VECTORS
 	mRep, phi = repulsivePotential(x,y,xg,yg)
 
 
@@ -169,17 +161,15 @@ def quadraticPotential(x,y,xg,yg):
 	if magFinal > 0.22:
 		magFinal = 0.22
 	
-	if fabs(phi - angle(x,y,xg,yg)) <= radians(185) and fabs(phi - angle(x,y,xg,yg)) >= radians(175):
+	if fabs(phi - angle(x,y,xg,yg)) <= radians(185) and fabs(phi - angle(x,y,xg,yg)) >= radians(175) and magFinal < 0.01:
 		print("________Local minima found_________")
 		print("+ve vector = ",mAtt,theta*180/pi," -ve vector = ",mRep,phi*180/pi)
 		print("resultant vector = ",magFinal,angFinal*180/pi)	
+		print("X=",BotX,"Y=",BotY)
 	else:
 		print("Cool")
 
 	
-	
-
-
 	return magFinal, angFinal
 
 
@@ -189,15 +179,23 @@ def actuate():
 	pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
 	rate = rospy.Rate(freq)
 
+	X1,Y1,Z1 = contourRepulsive(0,0,500,500,100,130)
+	X2,Y2,Z2 = contourRepulsive(0,0,500,500,330,270)
+	X3,Y3,Z3 = contourAttractive(0,0,500,500)
+	X,Y,Z = addContour(X1,Y1,Z1,Z2,Z3)
+	#plotcontour3D(X,Y,Z)
+	plotcontour2D(X,Y,Z)				
+				
+
 	while not rospy.is_shutdown():
-		linearV, angularV = quadraticPotential(BotX,BotY,500,500)
+		"""linearV, angularV = quadraticPotential(BotX,BotY,500,500)
 		
 		ppidOmega.required = angularV
 		angularV = ppidOmega.pidControl(robotYaw)	
 		
 		pub.publish(Twist(Vector3(linearV,0,0),Vector3(0,0,angularV)))
-
-		rate.sleep()		
+	
+		rate.sleep()"""		
 
 if __name__ == '__main__':
            initSystem()
