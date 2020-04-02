@@ -4,4 +4,6 @@
 4. **main_navigationFunc** - consists of navigation potential function in a sphere shaped set obstacles
 5. **main_potentialFunc** - consists of quadratic(attractive) potenial function and repulsive function for obstacles  
 6. **myClasses** - consists of PID class, Node class
+7. **main_AStar** - A* algorithm  
+8. **main_ARAStar** - ARA* algorithm
 
