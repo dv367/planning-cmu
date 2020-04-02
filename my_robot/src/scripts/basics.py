@@ -68,8 +68,14 @@ def addContour(X,Y,Z1,Z2,Z3):
 	return X,Y,Z3		
 		
 
-def plotGrid(data):
+def plotGrid(data,cmd):
 	
 	H = np.array(data)
-	plt.imshow(H,interpolation='none')
-	plt.show()
+
+	if cmd == "draw":		
+		plt.imshow(H,interpolation='none')	
+		plt.draw()
+		plt.pause(0.05)
+	else:
+		plt.imshow(H,interpolation='none')
+		plt.show()

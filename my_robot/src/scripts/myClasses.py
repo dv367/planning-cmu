@@ -43,12 +43,12 @@ class node:
 	i = 0
 	j = 0
 	e = 1
-	expanded = 0
+	expanded = 1
 	name = "s"
 	backpointer = ""
 	
-	def __init__(self,i,j,val,g,xg,yg,pre,e):
-		self.name = self.name + str(i) +" "+ str(j)		
+	def __init__(self,i,j,val,g,xg,yg,backP,e):
+		self.name = self.name + " " + str(i) +" "+ str(j)		
 		if val == 1:
 			if self.g > g + 100000: #obstacle
 				self.g = g + 100000
@@ -61,20 +61,19 @@ class node:
 		self.f = self.g + self.e*self.h
 	 	self.i = i
 		self.j = j
-		self.backpointer = pre
+		self.backpointer = backP
 
-	def update(self,val,g,pre,e):
+	def checkG(self,val,g,backP,e):
 		self.e = e
 		if val == 1:
 			if self.g > g + 100000: #obstacle
 				self.g = g + 100000
+				self.backpointer = backP
 		else:
 			if self.g > g + 1:	
 				self.g = g + 1	#free space
-		self.f = self.g + self.e*self.h
-		self.backpointer = pre
+				self.backpointer = backP
 
-	def updateF(self,e):
-		self.e = e
 		self.f = self.g + self.e*self.h
+
 
