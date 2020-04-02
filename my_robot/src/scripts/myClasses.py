@@ -1,3 +1,4 @@
+from basics import dist
 freq = 100
 class PID:
 	kp = 0
@@ -33,3 +34,47 @@ class PID:
 		elif self.output < self.minControl:
 			self.output = self.minControl
 		return self.output
+
+class node:
+	f = float('inf')
+	g = float('inf')
+	h = float('inf')
+	v = float('inf')
+	i = 0
+	j = 0
+	e = 1
+	expanded = 0
+	name = "s"
+	backpointer = ""
+	
+	def __init__(self,i,j,val,g,xg,yg,pre,e):
+		self.name = self.name + str(i) +" "+ str(j)		
+		if val == 1:
+			if self.g > g + 100000: #obstacle
+				self.g = g + 100000
+		else:
+			if self.g > g + 1:	
+				self.g = g + 1	#free space
+	
+		self.e = e
+		self.h = dist(i,j,xg,yg)
+		self.f = self.g + self.e*self.h
+	 	self.i = i
+		self.j = j
+		self.backpointer = pre
+
+	def update(self,val,g,pre,e):
+		self.e = e
+		if val == 1:
+			if self.g > g + 100000: #obstacle
+				self.g = g + 100000
+		else:
+			if self.g > g + 1:	
+				self.g = g + 1	#free space
+		self.f = self.g + self.e*self.h
+		self.backpointer = pre
+
+	def updateF(self,e):
+		self.e = e
+		self.f = self.g + self.e*self.h
+

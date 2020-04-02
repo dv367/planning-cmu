@@ -7,7 +7,6 @@ from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Empty
 
-import time
 from myClasses import *
 from basics import *
 from math import *
@@ -36,13 +35,6 @@ def initSystem():
 	rospy.Subscriber("/imu",Imu,getYaw)
 	rospy.Subscriber("/scan",LaserScan,getLaserData)
 
-	startTime = time.time()
-	resetOdom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
-	while time.time() - startTime < 1.0:
-		resetOdom.publish(Empty())
-		
-	print "__Odometry Reset__"
-
 #______________________________________________Callbacks________________________________________#	
 def getLaserData(laser):
 	global laserData	
@@ -68,60 +60,46 @@ def getYaw(Quaternion):
 #___________________________________________ex__Main___________________
 
 
-def navigationFunc(xg,yg,k,ob): #ob[[x,y,r]]
+def panel(x,y,xi,yi,L,lambDa_o):
+	
+	k = lambDa_o/(2.0*pi)
+	
+	normalV = k*(1.0/(x-xi))*((atan2(y-yi+L,x-xi))-(atan2(y-yi-L,x-xi)))
+	tangentialV = k*log(((x-xi)**2+(y+-yi+L)**2)/((x-xi)**2+(y-yi-L)**2))
+	
+	print normalV,tangentialV  
+	
+def sinkingGoal(x,y,xg,yg):
+	
+	lambDa_g = 0.22*dist*2*pi
+	k = -lambDa_g/(2.0*pi)
+	
+	distG = dist(x,y,xg,yg)**(2.0)
 
-	global thetaF, f
+	vGx = k*(x-xg)/(distG)
+	vGy = k*(y-yg)/(distG)
 
-	x, y = sp.symbols('x y', real=True)
+	return vGx,vGy	
+
+def uniformField(x,y,xg,yg):
+	
+	U = 0.22
+	alpha = atan2(y-yg,x-xg)
+
+	vUx = U(-sin(alpha))
+	vUy = U(cos(alpha))
+	
+	return vUx,vUy	
+	
+	
+def harmonicFunc(x,y,xg,yg,lambDa_g):
+	
+	vGX, vGY = sinkingGoal(x,y,xg,yg,lambDa_g)
 		
-	B0 = -(distSP(x,y,ob[0][0],ob[0][1])**2.0) + ob[0][2]**2.0
-	B1 =    distSP(x,y,ob[1][0],ob[1][1])**2.0 - ob[1][2]**2.0
-	B2 =    distSP(x,y,ob[2][0],ob[2][1])**2.0 - ob[2][2]**2.0
-	B3 =    distSP(x,y,ob[3][0],ob[3][1])**2.0 - ob[3][2]**2.0
-	#B4 =    distSP(x,y,ob[4][0],ob[4][1])**2.0 - ob[4][2]**2.0			
-		
-	Bi = B0*B1*B2*B3#*B4
-	yk = (distSP(x,y,xg,yg))**(2.0*k)
-
-	phi = atan2(yg - ob[0][1],xg - ob[0][0])
-
-	x_ = ob[0][2]*cos(phi+pi) + ob[0][0]
-	y_ = ob[0][2]*sin(phi+pi) + ob[0][0]
-
+	return v,theta
 	
-	yk_Max = yk.evalf(subs={x: x_, y: y_})
-	Bi_ = Bi.evalf(subs={x: x_, y: y_})
 
-	lambDa = fabs(yk_Max/Bi_)*10**(-25.0)
-	
-	print yk.evalf(subs={x: 0, y: -100}), Bi.evalf(subs={x: 0, y: -100}) 
 
-	f = 0.22*(yk/(yk+lambDa*Bi))**(1.0/k)	
-	
-	
-	fi = -sp.diff(f,x)
-	fj = -sp.diff(f,y)
-
-	thetaF = sp.atan2(fj,fi)
-
-	
-def evaluateGradientVector(a,b):
-
-	global thetaF, f
-
-	x, y = sp.symbols('x y', real=True)
-
-	
-	thetaFinal = thetaF.evalf(subs={x: a, y: b})
-	magFinal = 0.22#f.evalf(subs={x: a, y: b})
-	
-	if magFinal < 0.10 and magFinal > 0.0007:
-		magFinal = 0.10
-	
-	
-	print "angle = ",thetaFinal*180/pi," Mag = ", magFinal
-
-	return  magFinal, thetaFinal
 
 def actuate():
 	global BotX, BotY, robotYaw
@@ -129,19 +107,13 @@ def actuate():
 	pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
 	rate = rospy.Rate(freq)				
 				
-	QO = [[0.0,0.0,500.0],
-	      [100.0,100.0,100.0],
-	      [200.0,-100.0,100.0],
-	      [330.0,70.0,100.0]]
 
-	navigationFunc(448.0,160.0,10.0,QO)
-	
+	panel(50,50,0,0,100,1)	
 	while not rospy.is_shutdown():
-		linearV, angularV = evaluateGradientVector(BotX,BotY)		
+		linearV, angularV = harmonicFunc(BotX,BotY,-200,-200,10)		
 		ppidOmega.required = angularV
 		angularV = ppidOmega.pidControl(robotYaw)
 		pub.publish(Twist(Vector3(linearV,0,0),Vector3(0,0,angularV)))
-		
 		rate.sleep()		
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ import sympy as sp
 import numpy as np
 from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
+from matplotlib import colors
 
 def dist(x1,y1,x2,y2):
 	return sqrt((x1-x2)**2 + (y1-y2)**2)
@@ -35,6 +36,9 @@ def distNP(x1,y1,x2,y2):
 def distSP(x1,y1,x2,y2):
 	return sp.sqrt((x1-x2)**2 + (y1-y2)**2)
 
+def hueristic(i,j,xg,yg):
+	return dist(i,j,xg,yg)
+
 def plotcontour3D(X,Y,Z):
 	fig= plt.figure()	
 	ax = plt.axes(projection='3d')
@@ -64,3 +68,8 @@ def addContour(X,Y,Z1,Z2,Z3):
 	return X,Y,Z3		
 		
 
+def plotGrid(data):
+	
+	H = np.array(data)
+	plt.imshow(H,interpolation='none')
+	plt.show()
