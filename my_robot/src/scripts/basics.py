@@ -77,5 +77,8 @@ def plotGrid(data,cmd):
 		plt.draw()
 		plt.pause(0.05)
 	else:
+		plt.clf()
+		plt.close()
+	
 		plt.imshow(H,interpolation='none')
 		plt.show()

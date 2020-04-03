@@ -97,8 +97,8 @@ OPEN_ = []
 CLOSED = []
 CLOSED_ = []
 
-fourPoint_i = [1,-1,0,0]
-fourPoint_j = [0,0,1,-1]
+Point_i = [1,-1,0,0,-1,-1,1,1]
+Point_j = [0,0,1,-1,-1,1,1,-1]
 
 def smallest_F(data,minimum):
 	
@@ -154,7 +154,7 @@ def  computePath(xs,ys,xg,yg,e,Map):
 		
 		index = smallest_F(OPEN,1000)
 
-		print "Expaning = ",OPEN[index].name,OPEN[index].f
+		print "PUSH IN CLOSED = ",OPEN[index].name,OPEN[index].f
 		i = OPEN[index].i
 		j = OPEN[index].j
 		g = OPEN[index].g	
@@ -163,28 +163,32 @@ def  computePath(xs,ys,xg,yg,e,Map):
 		CLOSED.append(OPEN.pop(index))
 		CLOSED_.append(OPEN_.pop(index))
 
-		for k in range(len(fourPoint_i)):
-			m = fourPoint_i[k] + i
-			n = fourPoint_j[k] + j
+		for k in range(len(Point_i)):
+			m = Point_i[k] + i
+			n = Point_j[k] + j
 			
 			if m < len(Map) and m >= 0 and n < len(Map[0]) and n >= 0:
 				s = "s" + " " + str(m) + " " + str(n)
 					
+				cost = 1				
+				if m!=0 and n!=0:
+					cost = 1.4
+
 				openIndex = notIn(s,OPEN_)
 				closedIndex = notIn(s,CLOSED_) 
 				
 				if openIndex != -1:
 					OPEN[openIndex].checkG(Map[m][n],g,name,e)#val,g,backP,e			
 				elif closedIndex == -1:
-					OPEN.append(node(m,n,Map[m][n],g,xg,yg,name,e))
+					OPEN.append(node(m,n,Map[m][n],g+cost,xg,yg,name,e))
 					OPEN_.append(s)
-
+					expansions = expansions + 1
 				if s == "s" + " " + str(xg) + " " + str(yg):
 					goalExpanded = 1			
 					solutionExist = 1
 					goalBackPointer = name
 				temp[i][j] = 4
-				expansions = expansions + 1
+				
 
 		plotGrid(temp,"draw")
 	if solutionExist:

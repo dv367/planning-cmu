@@ -53,8 +53,8 @@ class node:
 			if self.g > g + 100000: #obstacle
 				self.g = g + 100000
 		else:
-			if self.g > g + 1:	
-				self.g = g + 1	#free space
+			if self.g > g:	
+				self.g = g	#free space
 	
 		self.e = e
 		self.h = dist(i,j,xg,yg)
@@ -70,10 +70,14 @@ class node:
 				self.g = g + 100000
 				self.backpointer = backP
 		else:
-			if self.g > g + 1:	
-				self.g = g + 1	#free space
+			if self.g > g:	
+				self.g = g	#free space
 				self.backpointer = backP
 
+		self.f = self.g + self.e*self.h
+
+	def updateF(self,e):
+		self.e = e
 		self.f = self.g + self.e*self.h
 
 

@@ -20,6 +20,10 @@ import numpy as np
 robotYaw = BotX = BotY = 0
 freq = 100
 laserData = [100]
+expansions = 0
+goalF = float('inf')
+init = 0
+goalBackPointer = "null"
 #_________________________________________Classes__________________________________________#
 
 
@@ -77,7 +81,7 @@ def getYaw(Quaternion):
 #8 [_ _ _ _ _ # _ # _ _]
 #9 [_ _ _ _ _ # _ _ _ _]
 #10[S _ _ _ _ # _ _ _ _] Start = (10,0) Goal(3,6)
-Map = [				  
+"""Map = [				  
 	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,1,1,1,1,1,1,0,0],
@@ -89,16 +93,26 @@ Map = [
 	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0]
-]
+]"""
 
+Map = [
+	[0,0,0,0,0,0],
+	[1,0,1,1,1,0],
+	[1,0,1,1,1,0],
+	[0,0,1,0,0,0],
+	[0,1,1,0,1,0],
+	[0,0,0,0,1,0],
+	[1,1,1,1,1,0],
+]
 
 OPEN = []
 OPEN_ = []
 CLOSED = []
 CLOSED_ = []
 
-fourPoint_i = [1,-1,0,0]
-fourPoint_j = [0,0,1,-1]
+
+Point_i = [1,-1,0,0,-1,-1,1,1]
+Point_j = [0,0,1,-1,-1,1,1,-1]
 
 def smallest_F(data,minimum):
 	
@@ -131,41 +145,60 @@ def extractIndicies(s):
 	return int(i),int(j)
 
 
-def  computePath(xs,ys,xg,yg,e,Map):
+def  computePathReuse(xs,ys,xg,yg,e,Map):
 	
 	global OPEN, CLOSED	
 	global OPEN_, CLOSED_
-	global fourPoint_i, fourPoint_j
+	global Point_i, Point_j
+	global expansions, goalF, init, goalBackPointer
 
-	startNode = node(xs,ys,Map[xs][ys],0,xg,yg,"null",e)#i,j,val,g,xg,yg,backP,e
-	startNode.backpointer = startNode.name
-	OPEN.append(startNode)
-	OPEN_.append(startNode.name)
+	if init == 0:
+		startNode = node(xs,ys,Map[xs][ys],0,xg,yg,"null",e)#i,j,val,g,xg,yg,backP,e
+		startNode.backpointer = startNode.name
+		OPEN.append(startNode)
+		OPEN_.append(startNode.name)
+		goalF = float('inf')
+		goalBackPointer = "null"		
+		init = 1
+	else:
+		expansions = 0
 
-	goalExpanded = 0 
-	expansions = 0
+		for i in range(len(OPEN)):
+			OPEN[i].updateF(e)
+
+
+	goalIndex = -1
+	goalExpanded = 0 	
 	solutionExist = 0
-	goalBackPointer = "null"
+	
 
 	temp = Map
 	temp[xs][ys] = 2
 	temp[xg][yg] = 3
-	while(len(OPEN)!=0 and goalExpanded == 0):
+
+	while goalExpanded == 0:
 		
 		index = smallest_F(OPEN,1000)
-
-		print "Expaning = ",OPEN[index].name,OPEN[index].f
+		
+		if goalF < OPEN[index].f:
+			solutionExist = 1
+			print "f(goal) is minimum!"			
+			break
+ 
+		#print "PUSH IN CLOSED = ",OPEN[index].name,OPEN[index].f
 		i = OPEN[index].i
 		j = OPEN[index].j
 		g = OPEN[index].g	
 		name = OPEN[index].name
+		OPEN[index].v = OPEN[index].g
 
+		expansions = expansions + 1
 		CLOSED.append(OPEN.pop(index))
 		CLOSED_.append(OPEN_.pop(index))
-
-		for k in range(len(fourPoint_i)):
-			m = fourPoint_i[k] + i
-			n = fourPoint_j[k] + j
+		print "to expand",name
+		for k in range(len(Point_i)):
+			m = Point_i[k] + i
+			n = Point_j[k] + j
 			
 			if m < len(Map) and m >= 0 and n < len(Map[0]) and n >= 0:
 				s = "s" + " " + str(m) + " " + str(n)
@@ -173,32 +206,60 @@ def  computePath(xs,ys,xg,yg,e,Map):
 				openIndex = notIn(s,OPEN_)
 				closedIndex = notIn(s,CLOSED_) 
 				
-				if openIndex != -1:
-					OPEN[openIndex].checkG(Map[m][n],g,name,e)#val,g,backP,e			
-				elif closedIndex == -1:
-					OPEN.append(node(m,n,Map[m][n],g,xg,yg,name,e))
+				cost = 1	
+				print s		
+				if m!=0 and n!=0:
+					cost = 1.4
+							
+				if closedIndex == -1 and openIndex ==-1:			
+					OPEN.append(node(m,n,Map[m][n],g+cost,xg,yg,name,e))
 					OPEN_.append(s)
+					if s == "s" + " " + str(xg) + " " + str(yg):
+						goalExpanded = 1			
+						solutionExist = 1
+						goalF = OPEN[len(OPEN)-1].f
+						goalBackPointer = name
+						goalIndex = len(OPEN)-1
+						print "HEEEEEEEEEEREEEEEEEEEEEEEEEEEEE"
+					
+				elif openIndex != -1:
+					OPEN[openIndex].checkG(Map[m][n],g+cost,name,e)
+					if s == "s" + " " + str(xg) + " " + str(yg):
+						goalExpanded = 1			
+						solutionExist = 1
+						goalF = OPEN[openIndex].f
+						goalBackPointer = name
+						goalIndex = openIndex			
+						print "HEEEEEEEEEEREEEEEEEEEEEEEEEEEEE"
+				elif closedIndex != -1:
+					CLOSED[closedIndex].checkG(Map[m][n],g+cost,name,e)
+					if s == "s" + " " + str(xg) + " " + str(yg):
+						goalExpanded = 1			
+						solutionExist = 1
+						goalF = OPEN[openIndex].f
+						goalBackPointer = name
+						goalIndex = openIndex			
+						print "HEEEEEEEEEEREEEEEEEEEEEEEEEEEEE"
+			
 
-				if s == "s" + " " + str(xg) + " " + str(yg):
-					goalExpanded = 1			
-					solutionExist = 1
-					goalBackPointer = name
-				temp[i][j] = 4
-				expansions = expansions + 1
-
+				
+				temp[i][j] = 4		
 		plotGrid(temp,"draw")
+	
+	print "Open = ",OPEN_
+	print "Closed =",CLOSED_
 	if solutionExist:
-		print "Expansions = ",expansions
+		print "Goal Found in Expansions = ",expansions
 		return goalBackPointer
 	else:
-		print "sorry no solution"
+		print "Expansions = ",expansions
 		return "null" 
 		
 		
 							
 def getSolution(xs,ys,xg,yg,goalBackPointer,Map):
 	
-	global CLOSED_
+	global CLOSED, CLOSED_
 
 	solved = Map
 	solution = []
@@ -223,15 +284,25 @@ def getSolution(xs,ys,xg,yg,goalBackPointer,Map):
 	solution.append(start)
 	i, j = extractIndicies(start)
 	solved[i][j] = 2
-	
+	print "Total moves=",len(solution)-1
+	print solution
 	return solved		
 			
 		
-def A_Star(xs,ys,xg,yg,e,Map):
-	goalBackPointer = computePath(xs,ys,xg,yg,e,Map)
-	solution = getSolution(xs,ys,xg,yg,goalBackPointer,Map)	
-	plotGrid(solution,"plot")	
-
+def ARA_Star(xs,ys,xg,yg,e,Map):
+		
+	while e>=1:
+		goalBackPointer = computePathReuse(xs,ys,xg,yg,e,Map)
+		if goalBackPointer != "null":		
+			solution = getSolution(xs,ys,xg,yg,goalBackPointer,Map)	
+			plotGrid(solution,"plot")
+		else:
+			print "meh"
+		e = e - 0.5
+		
+		
+			
+		
 		
 		
 			
@@ -245,7 +316,7 @@ def actuate():
 	
 	
 	
-	A_Star(10,0,0,9,10,Map)
+	ARA_Star(0,0,6,5,2.5,Map)
 	while not rospy.is_shutdown():
 		"""linearV, angularV = evaluateGradientVector(BotX,BotY)		
 		ppidOmega.required = angularV
