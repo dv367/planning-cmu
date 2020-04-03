@@ -1,4 +1,4 @@
-**DESCRIPTION:**
+# DESCRIPTION:
 
 1. **basics.py** - consists of mathematical function, plotting contours, plotting grids  
 2. **environment.py** - consists of plotting motion of robot on a graph
