@@ -13,5 +13,8 @@
 3. Navigation Potential Function  
 4. A*  
 5. ARA*  
+  
+**On-going:**
+1. D* Lite  
 
 
