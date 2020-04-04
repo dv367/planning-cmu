@@ -16,8 +16,9 @@
 3. Navigation Potential Function  
 4. A*  
 5. ARA*  
-  
+6. Robot Chasing Target    
+
 **On-going:**
-1. Robot Chasing Target
+
 
 
