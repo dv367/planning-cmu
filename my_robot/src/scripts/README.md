@@ -8,7 +8,7 @@
 6. **myClasses** - consists of PID class, Node class
 7. **main_AStar** - A* algorithm 
 8. **main_ARAStar** - ARA* algorithm 
-
+9. **catch_em_all** - robot chasing target
 **Completed:**  
 1. Bug1 and Bug2  
 2. Potential Functions(Quadratic for attractive)  
@@ -17,6 +17,6 @@
 5. ARA*  
   
 **On-going:**
-1. D* Lite  
+1. Robot Chasing Target
 
 
