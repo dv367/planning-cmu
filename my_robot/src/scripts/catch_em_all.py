@@ -13,7 +13,7 @@ from basics import *
 from math import *
 import sympy as sp
 import numpy as np
-from copy import deepcopy
+from copy import deepcopy, copy
 import random
 #max Linear vel = 0.22	Angular = 2.84
 
@@ -30,6 +30,7 @@ artificalObstaclesY = []
 prev_artificalX = []
 prev_artificalY = []
 ignoreTarget = 0
+
 #_________________________________________Classes__________________________________________#
 
 
@@ -93,8 +94,8 @@ Map = [
 	[0,1,0,0,0,0,0,0,0,0],
 	[0,1,0,1,1,1,1,1,0,0],
 	[0,1,0,0,0,0,0,0,0,0],
-	[0,1,1,1,1,1,1,0,0,0],
-	[0,1,0,0,0,0,1,0,0,0],
+	[0,1,0,1,1,1,1,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
 	[0,1,0,0,0,0,1,0,0,0],
 	[0,1,0,0,0,0,1,0,0,0],
 	[0,1,0,0,0,0,1,0,0,0],
@@ -163,35 +164,34 @@ def extractIndicies(s):
 
 	return int(i),int(j)
 
-def lookForFreeSpace(A,B,minX,minY,maxX,maxY,X,Y,Map):
+def lookForFreeSpace(A,B,X,Y,Map):
 	global Point_i, Point_j
 
-	corner_x = []
-	corner_y = []
-
-	corner_x.append(X[minX])
-	corner_y.append(Y[minX])
-	
-	corner_x.append(X[minY])
-	corner_y.append(Y[minY])
-	
-	corner_x.append(X[maxY])
-	corner_y.append(Y[maxY])
-	
-	corner_x.append(X[maxX])
-	corner_y.append(Y[maxX])
-	
-	
-	for w in range(len(corner_x)):
+	x = []
+	y = []
+	#print "here1"
+	for w in range(len(X)):
+	#	print "here2"
 		for k in range(len(Point_i)):
-		
-			m = Point_i[k] + corner_x[w]
-			n = Point_j[k] + corner_y[w]
+	#		print "here3"
+			m = Point_i[k] + X[w]
+			n = Point_j[k] + Y[w]
 			
 			if m < len(Map) and m >= 0 and m!=A and n!= B and n < len(Map[0]) and n >= 0:
+	#			print "here4"				
 				if Map[m][n] == 0:
-					return m,n
-		
+					x.append(m)
+					y.append(n)
+
+	minimum = dist(A,B,x[0],y[0])
+	m = x[0]
+	n = y[0]	
+	for i in range(len(x)):
+		if dist(A,B,x[i],y[i]) < minimum:
+			minimum = dist(A,B,x[i],y[i])
+			m = x[i]
+			n = y[i]
+	return x[i],y[i]
 			
 	
 
@@ -224,8 +224,8 @@ def  computePath(xs,ys,xg,yg,e,Map):
 
 	targetMoved = 0
 	index = -1
-
-	blocked = 0
+	blocked = 1
+	
 	neigbhours = 0
 	obstacles = 0
 
@@ -295,14 +295,8 @@ def  computePath(xs,ys,xg,yg,e,Map):
 					solutionExist = 1
 					goalBackPointer = name
 
-				neigbhours = neigbhours + 1		#check for neigbhours
-				if Map[m][n] == 1:
-					obstacles = obstacles + 1
-
-		if obstacles == neigbhours and neigbhours!=0:
-			blocked = 1
-			neigbhours = 0
-			obstacles = 0
+				if Map[m][n] == 0:
+					blocked = 0
 				
 		
 		if goalExpanded == 0 and ignoreTarget == 0:		
@@ -323,45 +317,62 @@ def  computePath(xs,ys,xg,yg,e,Map):
 
 						temp[new_xg][new_yg] = 3
 						targetMoved = 1
-		elif goalExpanded == 1:
+
+		elif goalExpanded == 1 and ignoreTarget == 1:
+			goalExpanded = 0
 			ignoreTarget = 0
+			targetMoved = 1
+			print "IgnoreTarget complete"
 
-			for a in prev_artificalX:
-				for b in prev_artificalY:
-					Map[a][b] = 1
+			
 
-				targetX = prevTargetX
-				targetY = prevTargetY
-				targetMoved = 1
+			artificalObstaclesX = copy(prev_artificalX)
+			artificalObstaclesY = copy(prev_artificalY)
+
+			artificalObstaclesX.append(robotX)
+			artificalObstaclesY.append(robotY)
+
+			robotX = targetX
+			robotY = targetY
+
+			for a in range(len(prev_artificalX)):
+				Map[prev_artificalX[a]][prev_artificalY[a]] = 1
+
+			targetX = prevTargetX
+			targetY = prevTargetY
+			targetMoved = 1
+
+			prev_artificalX = []
+			prev_artificalY = []
+			
+			for i in range(len(Map)):
+				print (Map[i])
+			
+			return "target moved"
 				
 		
 		
-		prevRobotX.append(i)
-		prevRobotY.append(j)	
-		if len(prevRobotX) >= 3:
-			for k in range(len(prevRobotX)-2):
-				if prevRobotX[k+0] == prevRobotX[k+2] and prevRobotY[k+0] == prevRobotY[k+2]:
+		if ignoreTarget == 0:
+			prevRobotX.append(i)
+			prevRobotY.append(j)	
+			if len(prevRobotX) >= 3:
+				for k in range(len(prevRobotX)-2):
+					if prevRobotX[k+0] == prevRobotX[k+2] and prevRobotY[k+0] == prevRobotY[k+2]:
 					
-					Map[prevRobotX[k]][prevRobotY[k]] = 1
+						Map[prevRobotX[k]][prevRobotY[k]] = 1
 
-					artificalObstaclesX.append(prevRobotX[k])
-					artificalObstaclesY.append(prevRobotY[k])
+						artificalObstaclesX.append(prevRobotX[k])
+						artificalObstaclesY.append(prevRobotY[k])
 					
-					prevRobotX = []
-					prevRobotY = []					
+						prevRobotX = []
+						prevRobotY = []					
 					
-		
+		#print "Before init=",len(artificalObstaclesX),"blocked = ",blocked,"ignoreTarget =",ignoreTarget,"goalExpanded = ",goalExpanded,"target moved =",targetMoved
 		if blocked == 1 and ignoreTarget == 0:
-			
-			minX_index = smallestInArray(artificalObstaclesX,float('inf'))
-			minY_index = smallestInArray(artificalObstaclesY,float('inf'))
-			
-			maxX_index = largestInArray(artificalObstaclesX,-float('inf'))
-			maxY_index = largestInArray(artificalObstaclesY,-float('inf'))
 
-			print (minX_index,minY_index,maxX_index,maxY_index)
-			xg_,yg_ = lookForFreeSpace(i,j,minX_index,minY_index,maxX_index,maxY_index,artificalObstaclesX,artificalObstaclesY,Map)	
-			print xg_,yg_			
+			print "IgnoreTarget init"
+			xg_,yg_ = lookForFreeSpace(i,j,artificalObstaclesX,artificalObstaclesY,Map)	
+						
 			ignoreTarget = 1		
 
 			targetX = xg_
@@ -370,22 +381,23 @@ def  computePath(xs,ys,xg,yg,e,Map):
 			robotX = i
 			robotY = j
 
-			prev_artificalX = deepcopy(artificalObstaclesX)
-			prev_artificalY = deepcopy(artificalObstaclesY)
-
-			prev_artificalX.append(robotX)
-			prev_artificalY.append(robotY)
+			artificalObstaclesX.append(i)
+			artificalObstaclesY.append(j)
+			prev_artificalX = copy(artificalObstaclesX)
+			prev_artificalY = copy(artificalObstaclesY)
 			
-			for a in artificalObstaclesX:
-				for b in artificalObstaclesY:
-					Map[a][b] = 0
+			for a in range(len(artificalObstaclesX)):
+				Map[artificalObstaclesX[a]][artificalObstaclesY[a]] = 0
+
+			for i in range(len(Map)):
+				print Map[i]
 			
 			artificalObstaclesX = []
 			artificalObstaclesY = []
 
 			return "target moved"
 		
-		
+		#print "Loop End=",len(artificalObstaclesX),"blocked = ",blocked,"ignoreTarget =",ignoreTarget,"goalExpanded = ",goalExpanded,"target moved =",targetMoved
 
 
 			
@@ -478,16 +490,3 @@ if __name__ == '__main__':
            initSystem()
 	   actuate()
 	   rospy.spin()
-
-
-
-
-
-           	
-
-	
-
-
-
-
-
