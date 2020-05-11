@@ -18,8 +18,8 @@ def angleNP(x1,y1,x2,y2):
 
 def scale360(angle):
 	if angle > 2*pi:
-		angle = 2*pi - angle
-	elif angle < 2*pi:
+		angle = angle - 2*pi
+	elif angle < -2*pi:
 		angle = angle + 2*pi
 	return angle
 
@@ -64,7 +64,7 @@ def plotcontour2D(X,Y,Z):
 def addContour(X,Y,Z1,Z2,Z3):
 	for i in range(0,len(Z3)):
 		for j in range(0,len(Z3)):
-			Z3[i][j] = Z3[i][j] + Z2[i][j] + Z1[i][j]
+			Z3[i][j] =  Z2[i][j] + Z1[i][j] + Z3[i][j] 
 	return X,Y,Z3		
 		
 
@@ -72,13 +72,14 @@ def plotGrid(data,cmd):
 	
 	H = np.array(data)
 
-	if cmd == "draw":		
+	if cmd == "draw":
+				
 		plt.imshow(H,interpolation='none')	
 		plt.draw()
 		plt.pause(0.05)
 	else:
-		plt.clf()
 		plt.close()
-	
+		fig2 = plt.figure()
+		fig2.clf()		
 		plt.imshow(H,interpolation='none')
 		plt.show()

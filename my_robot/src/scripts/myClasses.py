@@ -80,4 +80,16 @@ class node:
 		self.e = e
 		self.f = self.g + self.e*self.h
 
+class circle:
+	h = 0
+	k = 0
+	r = 0
+
+	def __init__(self,H,K,R):
+		self.h = H
+		self.k = K
+		self.r = R
+
+		
+
 

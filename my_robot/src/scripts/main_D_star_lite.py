@@ -5,10 +5,12 @@ from copy import copy, deepcopy
 
 
 #________________________________________Global Variables__________________________________#
-expansions = 0
+expansions = init = 0
 goalF = float('inf')
-init = 0
 goalBackPointer = "null"
+goalX = goalY = 0
+startX = startY = 0
+#__________________________________________________________________________________________#
 
    #0 1 2 3 4 5 6 7 8 9
 #0 [_ _ _ # _ _ _ _ _ _] 
@@ -22,29 +24,21 @@ goalBackPointer = "null"
 #8 [_ _ _ _ _ # _ # _ _]
 #9 [_ _ _ _ _ # _ _ _ _]
 #10[S _ _ _ _ # _ _ _ _] Start = (10,0) Goal(3,6)
+        #0 1 2 3 4 5 6 7 8 9 
 Map = [				  
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,1,1,1,1,1,1,0,0],
-	[0,0,0,0,0,0,0,1,0,0],
-	[0,0,0,0,0,0,0,1,0,0],
-	[0,0,0,0,0,0,0,1,0,0],
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,0,0,0,0,0,0]
+	[0,0,0,0,0,0,0,0,0,0],#0
+	[0,0,0,0,0,0,0,0,0,0],#1
+	[0,0,0,0,0,0,0,0,0,0],#2
+	[0,0,1,0,1,0,0,0,0,0],#3
+	[1,1,1,0,1,1,0,0,0,0],#4
+	[0,0,0,0,0,0,0,0,0,0],#5
+	[0,0,0,0,1,1,0,0,0,0],#6
+	[0,0,0,0,1,0,0,0,0,0],#7
+	[0,0,0,0,1,0,0,0,0,0],#8
+	[1,1,1,0,1,0,0,0,0,0],#9
+	[0,0,0,0,1,0,0,0,0,0]#10
 ]
-"""
-Map = [
-	[0,0,0,0,0,0],
-	[1,0,1,1,1,0],
-	[1,0,1,1,1,0],
-	[0,0,1,0,0,0],
-	[0,1,1,0,1,0],
-	[0,0,0,0,1,0],
-	[1,1,1,1,1,0],
-]"""
+
 
 OPEN = []
 OPEN_ = []
@@ -86,7 +80,7 @@ def extractIndicies(s):
 	return int(i),int(j)
 
 
-def  computePathReuse(xs,ys,xg,yg,e,Map):
+def computePathReuse(xs,ys,xg,yg,e,Map):
 	
 	global OPEN, CLOSED	
 	global OPEN_, CLOSED_
@@ -99,14 +93,19 @@ def  computePathReuse(xs,ys,xg,yg,e,Map):
 		OPEN_ = []
 		CLOSED = []
 		CLOSED_ = []
+
+		print len(OPEN)
 		
 		startNode = node(xs,ys,Map[xs][ys],0,xg,yg,"null",e)#i,j,val,g,xg,yg,backP,e
 		startNode.backpointer = startNode.name
-		OPEN.append(startNode)
-		OPEN_.append(startNode.name)
+		
+		expansions = 0
 		goalF = float('inf')
 		goalBackPointer = "null"		
 		init = 1
+
+		OPEN.append(startNode)
+		OPEN_.append(startNode.name)
 	else:
 		expansions = 0
 
@@ -131,14 +130,18 @@ def  computePathReuse(xs,ys,xg,yg,e,Map):
 			solutionExist = 1
 			break
  
-		#print "PUSH IN CLOSED = ",OPEN[index].name,OPEN[index].f
+		print "PUSH IN CLOSED = ",OPEN[index].name,OPEN[index].f
 		i = OPEN[index].i
 		j = OPEN[index].j
 		g = OPEN[index].g	
 		name = OPEN[index].name
 		OPEN[index].v = OPEN[index].g
 
+		#if i!=xs and j!=ys:
+			#temp[i][j] = 4			#show only expaneded nodes
+
 		expansions = expansions + 1
+
 		CLOSED.append(OPEN.pop(index))
 		CLOSED_.append(OPEN_.pop(index))
 		
@@ -160,8 +163,10 @@ def  computePathReuse(xs,ys,xg,yg,e,Map):
 				if closedIndex == -1 and openIndex ==-1:			
 					OPEN.append(node(m,n,Map[m][n],g+cost,xg,yg,name,e))
 					OPEN_.append(s)
+
 					if Map[m][n] == 0:
-						temp[m][n] = 4					
+						temp[m][n] = 4	# show all nodes that are explored				
+					
 					if s == "s" + " " + str(xg) + " " + str(yg):
 						goalExpanded = 1			
 						solutionExist = 1
@@ -232,21 +237,71 @@ def getSolution(xs,ys,xg,yg,goalBackPointer,Map):
 	i, j = extractIndicies(start)
 	solved[i][j] = 2
 
-	print "Total moves=",len(solution)-1
-	return solved		
+	return solved,solution		#solved is a Map and solution is a route
 			
-		
-def ARA_Star(xs,ys,xg,yg,e,Map):
-		
-	while e>=1:
-		print "e =",e
-		goalBackPointer = computePathReuse(xs,ys,xg,yg,e,Map)
-		if goalBackPointer != "null":		
-			solution = getSolution(xs,ys,xg,yg,goalBackPointer,Map)	
-			plotGrid(solution,"plot")
+def followPath(xs,ys,xg,yg,solution,Map):
+
+	temp = deepcopy(Map)
+	m = n = -1
+	prev_m = prev_n = -1
+
+
+	temp[xs][ys] = 2
+	temp[xg][yg] = 3
+	for i in range(len(solution)):
+
+		m,n = extractIndicies(solution[i])
+	
+		if Map[m][n] == 0:
+			
+			temp[m][n] = 4
+			
+			plotGrid(temp,"draw")
 		else:
-			print "No solution"
-		e = e - 0.5
+			return prev_m,prev_n,m,n
+
+		prev_m = m
+		prev_n = n
+
+	return m,n,-1,-1
+	
+def updateEdges(blockX,blockY,Map):
+	
+					
+					
+	
+				
+def D_Star_Lite(xs,ys,xg,yg,e,Map):
+	
+	global startX, startY
+	global goalX, goalY
+	global init
+	
+	startX = xs
+	startY = ys
+	
+	goalX = xg
+	goalY = yg
+	
+	
+	while(startX != goalX and startY != goalY):		
+
+		goalBackPointer = computePathReuse(goalX,goalY,startX,startY,e,Map)
+		solvedMap , route = getSolution(goalX,goalY,startX,startY,goalBackPointer,Map)	
+
+		Map[5][4] = 1
+		
+		startX, startY, blockX, blockY = followPath(startX,startY,goalX,goalY,route,Map)
+
+		if blockX == -1 and blockY == -1:
+			break	
+	
+		updateEdges(blockX,blockY,Map)
+		init = 0
+		
+		
+		
+	
 		
 		
 			
@@ -259,7 +314,7 @@ def ARA_Star(xs,ys,xg,yg,e,Map):
 
 
 if __name__ == '__main__':
-	ARA_Star(10,0,0,9,2.5,Map)
+	D_Star_Lite(10,0,4,8,1.0,Map)
 	  
 
 

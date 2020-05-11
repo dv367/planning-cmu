@@ -67,17 +67,9 @@ def contourAttractive(x,y,xg,yg):
 
 	X, Y = np.meshgrid(xx, yy)
 	Z = zeta*distNP(X, Y, xg,yg) #only Magnitude
-	theta = angleNP(X, Y, xg, yg) #angle
 	
-	"""for i in range(0,len(Z)):
-		for j in range(0,len(Z)):
-			temp = Z[i][j]
-				
-			Z[i][j] = Z[i][j]*cos(theta[i][j])
-			theta[i][j] = temp*sin(theta[i][j]) 
 	
-	plt.quiver(X,Y,Z,theta)
-	plt.show()"""
+	
 	
 	return X,Y,Z
 	
@@ -102,9 +94,11 @@ def contourRepulsive(x,y,xg,yg,xo,yo):
 	for i in range(0,len(Z)):
 		for j in range(0,len(Z)):
 			if Z[i][j] < tol and Z[i][j] > 0:
-				Z[i][j] = (eta*((1/tol) - (1/Z[i][j]))*(1/Z[i][j]**2))
+				Z[i][j] = fabs(eta*((1/tol) - (1/Z[i][j]))*(1/Z[i][j]**2))
+				
 				if fabs(Z[i][j]) > 0.22:
-					Z[i][j] = -0.22 			
+					Z[i][j] = 0.22
+				 			
 			else:
 				Z[i][j] = 0
 			
@@ -172,7 +166,8 @@ def quadraticPotential(x,y,xg,yg):
 	
 	return magFinal, angFinal
 
-
+	
+	
 def actuate():
 	global BotX, BotY, robotYaw
 		
@@ -183,7 +178,7 @@ def actuate():
 	X2,Y2,Z2 = contourRepulsive(0,0,500,500,330,270)
 	X3,Y3,Z3 = contourAttractive(0,0,500,500)
 	X,Y,Z = addContour(X1,Y1,Z1,Z2,Z3)
-	#plotcontour3D(X,Y,Z)
+	plotcontour3D(X,Y,Z)
 	plotcontour2D(X,Y,Z)				
 				
 

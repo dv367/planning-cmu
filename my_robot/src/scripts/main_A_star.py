@@ -1,68 +1,7 @@
 #!/usr/bin/env python
 
-#standard imports
-import rospy
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist, Vector3
-from sensor_msgs.msg import Imu, LaserScan
-from std_msgs.msg import Empty
-
-import time
 from myClasses import *
 from basics import *
-from math import *
-import sympy as sp
-import numpy as np
-
-#max Linear vel = 0.22	Angular = 2.84
-
-#________________________________________Global Variables__________________________________#
-robotYaw = BotX = BotY = 0
-freq = 100
-laserData = [100]
-#_________________________________________Classes__________________________________________#
-
-
-ppidOmega = PID(2.0,0,0,pi/2,-2.84,2.84) #orientation control
-ppidFollowB = PID(0.01,0.1,0,0,-2.84,2.84)
-#_______________________________________________Functions_______________________________________#
-
-def initSystem():
-	rospy.init_node('my_robot',anonymous='True')	
-
-	rospy.Subscriber("/odom",Odometry,getXY)
-	rospy.Subscriber("/imu",Imu,getYaw)
-	rospy.Subscriber("/scan",LaserScan,getLaserData)
-
-	startTime = time.time()
-	resetOdom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
-	while time.time() - startTime < 1.0:
-		resetOdom.publish(Empty())
-		
-	print "__Odometry Reset__"
-
-#______________________________________________Callbacks________________________________________#	
-def getLaserData(laser):
-	global laserData	
-	laserData = laser.ranges #m
-			
-
-	
-def getXY(PoseWithCovariance):	
-	global BotX, BotY # My Axis
-	BotX =  (PoseWithCovariance.pose.pose.position.x - 0)*100 #cm
-	BotY =  (PoseWithCovariance.pose.pose.position.y - 0)*100  #cm
-
-
-def getYaw(Quaternion):	
-	global robotYaw	
-	qx = Quaternion.orientation.x
-	qy = Quaternion.orientation.y
-	qz = Quaternion.orientation.z
-	qw = Quaternion.orientation.w
-	
-	robotYaw = (atan2(2*(qz*qw + qy*qx),1- 2*(qz**2 + qy**2))) 
-
 #___________________________________________ex__Main___________________
 
    #0 1 2 3 4 5 6 7 8 9
@@ -135,7 +74,12 @@ def  computePath(xs,ys,xg,yg,e,Map):
 	
 	global OPEN, CLOSED	
 	global OPEN_, CLOSED_
-	global fourPoint_i, fourPoint_j
+	global Point_i, Point_j
+
+	OPEN = []
+	OPEN_ = []
+	CLOSED = []
+	CLOSED_ = []
 
 	startNode = node(xs,ys,Map[xs][ys],0,xg,yg,"null",e)#i,j,val,g,xg,yg,backP,e
 	startNode.backpointer = startNode.name
@@ -183,11 +127,14 @@ def  computePath(xs,ys,xg,yg,e,Map):
 					OPEN.append(node(m,n,Map[m][n],g+cost,xg,yg,name,e))
 					OPEN_.append(s)
 					expansions = expansions + 1
+					
+					if Map[m][n] == 0:
+						temp[m][n] = 4
 				if s == "s" + " " + str(xg) + " " + str(yg):
 					goalExpanded = 1			
 					solutionExist = 1
 					goalBackPointer = name
-				temp[i][j] = 4
+				
 				
 
 		plotGrid(temp,"draw")
@@ -202,7 +149,7 @@ def  computePath(xs,ys,xg,yg,e,Map):
 							
 def getSolution(xs,ys,xg,yg,goalBackPointer,Map):
 	
-	global CLOSED_
+	global CLOSED_, CLOSED
 
 	solved = Map
 	solution = []
@@ -238,30 +185,9 @@ def A_Star(xs,ys,xg,yg,e,Map):
 
 		
 		
-			
-	
-
-def actuate():
-	global BotX, BotY, robotYaw, Map
-		
-	pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
-	rate = rospy.Rate(freq)				
-	
-	
-	
-	A_Star(10,0,0,9,10,Map)
-	while not rospy.is_shutdown():
-		"""linearV, angularV = evaluateGradientVector(BotX,BotY)		
-		ppidOmega.required = angularV
-		angularV = ppidOmega.pidControl(robotYaw)
-		pub.publish(Twist(Vector3(linearV,0,0),Vector3(0,0,angularV)))
-		"""
-		rate.sleep()		
 
 if __name__ == '__main__':
-           initSystem()
-	   actuate()
-	   rospy.spin()
+           A_Star(10,0,0,9,2.5,Map)
 
 
 
