@@ -6,7 +6,7 @@
 4. **main_navigationFunc** - consists of navigation potential function in a sphere shaped set obstacles   
 5. **main_potentialFunc** - consists of quadratic(attractive) potenial function and repulsive function for obstacles    
 6. **myClasses** - consists of PID class, Node class
-7. **main_AStar** - A* algorithm 
+7. **main_AStar** - A* algorithm (changeable weights)
 8. **main_ARAStar** - ARA* algorithm 
 9. **catch_em_all** - robot chasing target  
 
@@ -17,7 +17,7 @@
 4. A*  
 5. ARA*  
 6. Robot Chasing Target    
-
+7. D* Lite  
 **On-going:**
 
 
