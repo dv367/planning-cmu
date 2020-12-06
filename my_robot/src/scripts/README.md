@@ -9,7 +9,8 @@
 7. **main_AStar** - A* algorithm (changeable weights)
 8. **main_ARAStar** - ARA* algorithm 
 9. **catch_em_all** - robot chasing target  
-
+10. **main_D_star_lite** - D* algorithm  
+  
 **Completed:**  
 1. Bug1 and Bug2  
 2. Potential Functions(Quadratic for attractive)  
@@ -18,6 +19,7 @@
 5. ARA*  
 6. Robot Chasing Target    
 7. D* Lite  
+  
 **On-going:**
 
 
